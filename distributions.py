@@ -106,6 +106,6 @@ class MultivariateNormal(Distribution):
         Sig = np.linalg.inv(LT_to_mat(args, self.ndims))
 
         dTh_a = (2 * Sig - (Sig * np.identity(self.ndims)))
-        dTh_b = np.sum([np.outer(x, x) for x in data])
+        dTh_b = np.einsum('ij, ik->jk', data, data)
         return mat_to_LT(len(data) * dTh_a - dTh_b)
 
