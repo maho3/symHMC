@@ -35,6 +35,7 @@ class HMC():
         self.dt = dt
         self.L = L
         self.M = M
+        self.invM = np.linalg.inv(self.M)
         self.n_args = n_args
         
         if prop=='leapfrog':
@@ -58,10 +59,12 @@ class HMC():
         # https://en.wikiself.dlogp(x, data)pedia.org/wiki/Leapfrog_integration
         x, v = copy.deepcopy((x,v))
 
+        dUx = self.dU(x, data)
         for _ in range(self.L):
-            v += (self.dt/2)*self.dU(x, data)
-            x += self.dt*np.dot(np.linalg.inv(self.M), v)
-            v += (self.dt/2)*self.dU(x, data)
+            v += (self.dt/2)*dUx
+            x += self.dt*np.dot(self.invM, v)
+            dUx = self.dU(x, data)
+            v += (self.dt/2)*dUx
         
         return x, v
     
@@ -78,13 +81,13 @@ class HMC():
         d1=d3=w1
         d2=w0
         for _ in range(self.L):
-            x += c1*np.dot(np.linalg.inv(self.M), v)*self.dt
+            x += c1*np.dot(self.invM, v)*self.dt
             v += d1*self.dU(x, data)*self.dt
-            x += c2*np.dot(np.linalg.inv(self.M), v)*self.dt
+            x += c2*np.dot(self.invM, v)*self.dt
             v += d2*self.dU(x, data)*self.dt
-            x += c3*np.dot(np.linalg.inv(self.M), v)*self.dt
+            x += c3*np.dot(self.invM, v)*self.dt
             v += d3*self.dU(x, data)*self.dt
-            x += c4*np.dot(np.linalg.inv(self.M), v)*self.dt
+            x += c4*np.dot(self.invM, v)*self.dt
 
         return x, v
     
@@ -104,16 +107,20 @@ class HMC():
         if verbose: # Print progress bar
             i_s = tqdm(i_s)
         
+        Ux = self.U(x, data)
         for i in i_s:
             v = mvnorm.rvs(mean=np.zeros(self.n_args), cov=self.M)
-            xnew, vnew = self.proposal(x, v, data)
 
-            alpha = np.exp(self.U(x, data) +  self.K(v)
-                           - self.U(xnew, data) - self.K(vnew))
+            xnew, vnew = self.proposal(x, v, data)
+            Uxnew = self.U(xnew, data)
+
+            alpha = np.exp(Ux +  self.K(v)
+                           - Uxnew - self.K(vnew))
 
             if np.random.rand() <= min(1, alpha):
                 xs[i] = xnew
                 x = xnew
+                Ux = Uxnew
             else:
                 xs[i] = xs[i-1]
                 
