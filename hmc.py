@@ -42,6 +42,10 @@ class HMC():
             self.proposal = self.prop_lf
         elif prop=='yoshida':
             self.proposal = self.prop_yo
+        elif prop=='ruth':
+            self.proposal = self.prop_ruth
+        elif prop=='calvo':
+            self.proposal = self.prop_cal
         else:
             raise
     
@@ -88,6 +92,41 @@ class HMC():
             x += c3*np.dot(self.invM, v)*self.dt
             v += d3*self.dU(x, data)*self.dt
             x += c4*np.dot(self.invM, v)*self.dt
+
+        return x, v
+
+    def prop_ruth(self, x, v, data):
+        # Fifth-order Partitioned Runge-Kutta Integration (Ruth, 1983)
+        x, v = copy.deepcopy((x,v))
+        
+        b = [-1./24, 3./4, 7./12, 3./4, -1./24, 0]
+        B = [1., -2./3, 2./3, 2./3, -2./3, 1.]
+        for _ in range(self.L):
+            for i in range(len(b)):
+                x += self.dt*B[i]*np.dot(self.invM, v)
+                v += self.dt*b[i]*self.dU(x, data)
+
+        return x, v
+
+    def prop_cal(self, x, v, data):
+        # 4 Fourth-order Runge-Kutta-Nystrom Integration (Calvo & Sanz-Serna, 199
+        x, v = copy.deepcopy((x,v))
+        
+        b = [0.0617588581356263250,
+             0.3389780265535433551,
+             0.6147913071755775662,
+             -0.1405480146593733802,
+             0.1250198227945261338]
+        g = [0,
+             0.2051776615422863869,
+             0.6081989431465009739,
+             0.4872780668075869657,
+             1, 1]
+        B = [g[i+1]-g[i] for i in range(len(g)-1)]
+        for _ in range(self.L):
+            for i in range(len(b)):
+                x += self.dt*B[i]*np.dot(self.invM, v)
+                v += self.dt*b[i]*self.dU(x, data)
 
         return x, v
     
