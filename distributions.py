@@ -109,3 +109,32 @@ class MultivariateNormal(Distribution):
         dTh_b = np.einsum('ij, ik->jk', data, data)
         return mat_to_LT(len(data) * dTh_a - dTh_b)
 
+
+class HierarchicalBayesianLogisticRegression(Distribution):
+    def __init__(self, n_dims, _lambda=0.01):
+        super(HierarchicalBayesianLogisticRegression, self).__init__()
+        self.n_dims = n_dims
+        self._lambda = _lambda
+
+    def logp(self, args, data):
+        beta, alpha, sigma_sq = args[:-2], args[-2], args[-1]
+        X, y = data[:, :-1], data[:, -1]
+        N, _ = X.shape
+        _logp = -((alpha**2 + beta.dot(beta)) / sigma_sq / 2 + N / 2 * np.log(sigma_sq) - self._lambda * sigma_sq)
+        _logp -= np.sum(np.log(np.exp(-y * X.dot(beta)) + 1))
+        return _logp
+
+    def dlogp(self, args, data):
+        beta, alpha, sigma_sq = args[:-2], args[-2], args[-1]
+        X, y = data[:, :-1], data[:, -1]
+        N, _ = X.shape
+        dalpha = -alpha / sigma_sq
+        logits = y * X.dot(beta)
+        dbeta = np.sum(y[:, None] * X / (np.exp(logits) + 1.)[:, None], 0) - beta / sigma_sq
+        dsig = (alpha ** 2 + beta.dot(beta)) / sigma_sq ** 2 - N / 2 / sigma_sq - self._lambda
+        _dlop = np.zeros(self.n_dims + 2)
+        _dlop[:-2] = dbeta
+        _dlop[-2] = dalpha
+        _dlop[-1] = dsig
+        return _dlop
+
