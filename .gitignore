@@ -2,3 +2,7 @@
 *.xml
 *.pdf
 
+./__pycache__/
+
+./cache/
+./figures/

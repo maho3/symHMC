@@ -153,8 +153,8 @@ class HMC():
             xnew, vnew = self.proposal(x, v, data)
             Uxnew = self.U(xnew, data)
 
-            alpha = np.exp(Ux +  self.K(v)
-                           - Uxnew - self.K(vnew))
+            alpha = np.exp(Ux - Uxnew 
+                           + self.K(v) - self.K(vnew))
 
             if np.random.rand() <= min(1, alpha):
                 xs[i] = xnew
@@ -166,6 +166,7 @@ class HMC():
         return xs
     
     def _pool_helper(self, N_samp, data, init_x, verbose, seed):
+
         np.random.seed(seed)
         return self.sample(N_samp, data, init_x, verbose)
     

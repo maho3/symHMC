@@ -57,7 +57,7 @@ class IndependentMultivariateNormal(Distribution):
         sigs = args[int(self.n_args / 2):]
 
         if (sigs <= 0).any():
-            return 0
+            return -np.inf
         return np.sum(mvnorm.logpdf(data, mus, np.diag(sigs)))
 
     def dlogp(self, args, data):
