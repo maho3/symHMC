@@ -153,10 +153,15 @@ class HMC():
             xnew, vnew = self.proposal(x, v, data)
             Uxnew = self.U(xnew, data)
 
-            alpha = np.exp(Ux - Uxnew 
-                           + self.K(v) - self.K(vnew))
+            alpha = Ux - Uxnew + self.K(v) - self.K(vnew)
+            if np.isnan(alpha):
+                alpha = 0
+            elif alpha >= 0:
+                alpha=1
+            else:
+                alpha = np.exp(alpha)
 
-            if np.random.rand() <= min(1, alpha):
+            if np.random.rand() <= alpha: #min(1, alpha):
                 xs[i] = xnew
                 x = xnew
                 Ux = Uxnew

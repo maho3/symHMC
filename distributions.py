@@ -58,7 +58,11 @@ class IndependentMultivariateNormal(Distribution):
 
         if (sigs <= 0).any():
             return -np.inf
-        return np.sum(mvnorm.logpdf(data, mus, np.diag(sigs)))
+
+        try:
+            return np.sum(mvnorm.logpdf(data, mus, np.diag(sigs)))
+        except np.linalg.LinAlgError:
+            return -np.inf
 
     def dlogp(self, args, data):
         """
@@ -93,8 +97,12 @@ class MultivariateNormal(Distribution):
         Sig = np.linalg.inv(LT_to_mat(args, self.ndims))
 
         if (Sig <= 0).any():
-            return 0
-        return np.sum(mvnorm.logpdf(data, mu, Sig))
+            return -np.inf
+
+        try:
+            return np.sum(mvnorm.logpdf(data, mu, Sig))
+        except np.linalg.LinAlgError:
+            return -np.inf
 
     def dlogp(self, args, data):
         """
