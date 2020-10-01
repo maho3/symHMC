@@ -1,2 +1,8 @@
 *.ipynb_checkpoints
+*.xml
+*.pdf
 
+./__pycache__/
+
+./cache/
+./figures/
